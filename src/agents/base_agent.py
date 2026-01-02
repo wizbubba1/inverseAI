@@ -2,10 +2,9 @@
 
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
 from typing import Any
 
-import anthropic
+import aiohttp
 
 from src.config import get_settings
 from src.data.indicators import TechnicalIndicators
@@ -27,7 +26,6 @@ class BaseAgent(ABC):
 
     def __init__(self):
         self.settings = get_settings()
-        self._client: anthropic.AsyncAnthropic | None = None
 
     @property
     @abstractmethod
@@ -47,14 +45,38 @@ class BaseAgent(ABC):
         """Detailed description of the TA methodology."""
         pass
 
-    @property
-    def client(self) -> anthropic.AsyncAnthropic:
-        """Get or create the Anthropic client."""
-        if self._client is None:
-            self._client = anthropic.AsyncAnthropic(
-                api_key=self.settings.anthropic_api_key.get_secret_value()
-            )
-        return self._client
+    async def _call_openrouter(self, prompt: str) -> str:
+        """Make a request to OpenRouter API."""
+        url = f"{self.settings.openrouter_base_url}/chat/completions"
+
+        headers = {
+            "Authorization": f"Bearer {self.settings.openrouter_api_key.get_secret_value()}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/inverse-sentiment-trader",
+            "X-Title": "Inverse Sentiment AI Trader",
+        }
+
+        payload = {
+            "model": self.settings.llm_model,
+            "max_tokens": self.settings.llm_max_tokens,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"OpenRouter API error {response.status}: {error_text}")
+
+                data = await response.json()
+
+                # Extract the response content
+                if "choices" in data and len(data["choices"]) > 0:
+                    return data["choices"][0]["message"]["content"]
+                else:
+                    raise Exception(f"Unexpected OpenRouter response format: {data}")
 
     def build_prompt(
         self,
@@ -148,16 +170,7 @@ Respond with ONLY the JSON object, no additional text."""
         prompt = self.build_prompt(asset, price_data, indicators)
 
         try:
-            response = await self.client.messages.create(
-                model=self.settings.llm_model,
-                max_tokens=self.settings.llm_max_tokens,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-            )
-
-            # Extract text content
-            content = response.content[0].text
+            content = await self._call_openrouter(prompt)
 
             # Parse JSON from response
             output_dict = extract_json_from_text(content)
@@ -178,9 +191,9 @@ Respond with ONLY the JSON object, no additional text."""
                 indicators=output_dict.get("indicators", {}),
             )
 
-        except anthropic.APIError as e:
-            log.error(f"API error in agent {self.agent_id}: {e}")
-            return self._neutral_output(asset, f"API error: {str(e)}")
+        except aiohttp.ClientError as e:
+            log.error(f"Network error in agent {self.agent_id}: {e}")
+            return self._neutral_output(asset, f"Network error: {str(e)}")
         except Exception as e:
             log.error(f"Error in agent {self.agent_id}: {e}")
             return self._neutral_output(asset, f"Error: {str(e)}")

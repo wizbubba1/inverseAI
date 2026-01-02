@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     )
 
     # API Keys
-    anthropic_api_key: SecretStr = Field(description="Anthropic API key for Claude")
+    openrouter_api_key: SecretStr = Field(description="OpenRouter API key for LLM access")
     discord_bot_token: SecretStr = Field(description="Discord bot token")
     discord_channel_id: str = Field(description="Discord channel ID for notifications")
     discord_admin_user_ids: str = Field(default="", description="Comma-separated admin user IDs")
@@ -70,9 +70,10 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging level")
     database_path: str = Field(default="data/trader.db", description="SQLite database path")
 
-    # LLM Configuration
-    llm_model: str = Field(default="claude-sonnet-4-20250514", description="Claude model for TA agents")
+    # LLM Configuration (OpenRouter)
+    llm_model: str = Field(default="anthropic/claude-sonnet-4", description="OpenRouter model ID for TA agents")
     llm_max_tokens: int = Field(default=1024, description="Max tokens for LLM responses")
+    openrouter_base_url: str = Field(default="https://openrouter.ai/api/v1", description="OpenRouter API base URL")
 
     # Paper trading mode
     paper_trading: bool = Field(default=True, description="Enable paper trading (no real trades)")

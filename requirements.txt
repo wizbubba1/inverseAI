@@ -1,5 +1,4 @@
 # Core dependencies
-anthropic>=0.40.0
 python-dotenv>=1.0.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0

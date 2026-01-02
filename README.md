@@ -94,10 +94,14 @@ Edit `.env` with your settings:
 
 ```bash
 # Required API Keys
-ANTHROPIC_API_KEY=your_anthropic_api_key
+OPENROUTER_API_KEY=your_openrouter_api_key
 DISCORD_BOT_TOKEN=your_discord_bot_token
 DISCORD_CHANNEL_ID=your_channel_id
 HYPERLIQUID_PRIVATE_KEY=your_wallet_private_key
+
+# LLM Model (via OpenRouter)
+# See https://openrouter.ai/models for options
+LLM_MODEL=anthropic/claude-sonnet-4
 
 # Trading Settings
 HYPERLIQUID_TESTNET=true  # Start with testnet!
@@ -110,6 +114,18 @@ MAX_POSITION_SIZE_USD=1000
 MAX_LEVERAGE=5
 MAX_DAILY_DRAWDOWN_PCT=5
 ```
+
+## Supported LLM Models (via OpenRouter)
+
+The system uses [OpenRouter](https://openrouter.ai) for LLM access, giving you flexibility to choose models:
+
+| Model | Cost | Notes |
+|-------|------|-------|
+| `anthropic/claude-sonnet-4` | ~$3/1M tokens | Recommended - best balance |
+| `anthropic/claude-3.5-sonnet` | ~$3/1M tokens | Great performance |
+| `anthropic/claude-3-haiku` | ~$0.25/1M tokens | Budget option |
+| `google/gemini-flash-1.5` | ~$0.075/1M tokens | Very cheap |
+| `openai/gpt-4o-mini` | ~$0.15/1M tokens | Good budget option |
 
 ## Running
 
